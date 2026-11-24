@@ -7,6 +7,10 @@ from werkzeug.exceptions import HTTPException
 from app.config import Config
 from app.errors import AppError
 from app.repositories.database import Database
+from app.repositories.enrollment_repository import EnrollmentRepository
+from app.repositories.student_repository import StudentRepository
+from app.routes import students
+from app.services.student_service import StudentService
 
 log = logging.getLogger("app.http")
 error_log = logging.getLogger("app.errors")
@@ -24,6 +28,11 @@ def create_app(overrides=None):
     # Wiring: the only place that chooses concrete classes
     database = Database(config.DATABASE_PATH)
     database.create_tables()
+    student_repo = StudentRepository(database)
+    enrollment_repo = EnrollmentRepository(database)
+
+    app.extensions["student_service"] = StudentService(student_repo, enrollment_repo)
+    app.register_blueprint(students.bp)
 
     register_middleware(app)
     register_error_handlers(app)
